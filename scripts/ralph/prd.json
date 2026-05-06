@@ -18,8 +18,8 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Server boots on PORT 3001, /health verified 200 ok. dotenv loads from project-root .env. axios installed for next story."
     },
     {
       "id": "US-002",

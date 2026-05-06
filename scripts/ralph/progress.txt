@@ -1,3 +1,27 @@
 # Ralph Progress Log
 Started: Wed, May  6, 2026  4:04:37 PM
 ---
+
+## Codebase Patterns
+- Server entry: `server/index.js` — CommonJS, dotenv loaded from project-root `.env` via `path.resolve(__dirname, '..', '.env')`
+- Run server: `cd server && npm start` (typecheck via `npm run typecheck` = `node --check`)
+- CORS origin allowlist: `http://localhost:5173` (Vite client default)
+- `app` exported from `server/index.js`; `app.listen()` only runs when invoked as main module — keeps app importable from tests
+- Two `package.json`s expected: `server/` (CommonJS) and future `client/` (Vite). No root package.json yet.
+- `.env.example` lives at project root, NOT inside server/ (single source of truth for both server and future client config)
+
+## 2026-05-06 - US-001
+- Implemented Express server scaffold with dotenv, cors, axios deps
+- Files changed:
+  - .gitignore (new) - ignores node_modules, .env, dist/build
+  - .env.example (new) - YOUTH_API_KEY=, PORT=3001
+  - server/package.json (new) - express/cors/dotenv/axios deps, start + typecheck scripts
+  - server/index.js (new) - Express app, CORS allows :5173, GET /health -> 200 {status:'ok'}, listens on PORT
+- Verified: typecheck pass, boot pass, curl /health returned HTTP 200 {"status":"ok"}
+- **Learnings for future iterations:**
+  - dotenv must be loaded BEFORE requiring modules that read process.env
+  - Project-root .env keeps single source of truth; server resolves it via path.resolve(__dirname, '..', '.env')
+  - Use `if (require.main === module)` guard around app.listen so US-002+ can import the app for tests without binding the port
+  - axios already installed at US-001 for US-002 reuse — don't reinstall
+  - server/__tests__/ (US-003) will need a test runner; not yet added — pick node --test (built-in, no extra dep) when needed
+---
