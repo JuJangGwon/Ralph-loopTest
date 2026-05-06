@@ -73,8 +73,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "client/ scaffolded manually (no `npm create vite` - faster, deterministic). Vite 5.4 + React 18 + react-router-dom 6.26. BrowserRouter in main.jsx, Routes/Route in App.jsx. 6 placeholder pages render data-route div. client/.env + .env.example with VITE_API_BASE_URL=http://localhost:3001. typecheck (node --check vite.config.js) + vite build pass. Dev server verified on :5173 strictPort, /funnel/name + /result return 200 (SPA fallback)."
     },
     {
       "id": "US-005",

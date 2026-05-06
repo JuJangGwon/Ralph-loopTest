@@ -16,6 +16,11 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Test runner: `node --test <file>` (built-in, no deps). Pass an explicit file path — `node --test __tests__` resolves the directory as a CJS module on Windows and crashes (MODULE_NOT_FOUND). Run via `npm test` from `server/`.
 - Scoring: `server/score.js` exposes pure `scoreBenefit(benefit, input)` and `recommend(benefits, input)`. Region-match treats `''/null/'전국'/'00000'/'003001'` as nationwide (+1); exact string equality is +3. Job match splits benefit.jobCondition on `,/|`, then substring fallback. Income +2 when min/max both null OR user income within [min,max]. Recommend filters score<1, sorts score desc, name asc tiebreak.
 - POST /api/recommend handler in `index.js` 400s with `{ error: 'missing required fields: ...' }` when any of name/region/job/income absent (income==='' counts as missing). Otherwise returns `{ recommendations }`.
+- Client root: `client/` — Vite 5 + React 18 + react-router-dom 6, scaffolded manually (no `npm create vite` to avoid interactive prompts). `package.json type: "module"`, JSX in `.jsx` files, dev port 5173 strictPort.
+- Client routes wired in `client/src/App.jsx` (Routes/Route) under `BrowserRouter` from `main.jsx`. Pages live in `client/src/pages/*.jsx`. Use `data-route` attribute on placeholder pages for sanity checks.
+- Client typecheck: `npm run typecheck` runs `node --check vite.config.js`. Extend script per file when adding TS/JS source files that need static syntax check (parallels server pattern).
+- Client env: `VITE_API_BASE_URL` from `client/.env` (committed) + `client/.env.example`. Vite only exposes vars prefixed `VITE_`.
+- Root `.gitignore` already covers `node_modules/` and `dist/` for both `server/` and `client/` — no client-specific ignore needed.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -63,4 +68,24 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - Income comparison treats min/max as same unit as user input (만원 per US-011 label). API `earnMinAmt/earnMaxAmt` units must be confirmed against real responses; current logic assumes raw numeric equality of units.
   - For future endpoints needing benefits cache in tests: import `_setBenefitsForTest` from `./benefits` and seed before requests — works without HTTP listening (use `app.listen(0)` for ephemeral port).
   - Validation pattern: collect missing field names in array, 400 with `{ error: 'missing required fields: a, b' }`. Reuse for future POST endpoints to keep error shape consistent.
+---
+
+## 2026-05-06 - US-004
+- Scaffolded React + Vite client with router (manual, no `npm create vite`)
+- Files changed:
+  - client/package.json (new) - vite 5.4, react 18.3, react-router-dom 6.26, @vitejs/plugin-react 4.3; scripts dev/build/preview/typecheck
+  - client/vite.config.js (new) - react plugin, port 5173 strictPort
+  - client/index.html (new) - lang=ko, title 청년 혜택 추천, mount #root
+  - client/src/main.jsx (new) - ReactDOM root with BrowserRouter
+  - client/src/App.jsx (new) - 6 Routes: /, /funnel/name, /funnel/region, /funnel/job, /funnel/income, /result
+  - client/src/pages/{Landing,FunnelName,FunnelRegion,FunnelJob,FunnelIncome,Result}.jsx (new) - placeholder data-route divs
+  - client/.env (new) - VITE_API_BASE_URL=http://localhost:3001
+  - client/.env.example (new) - same
+- Verified: `npm install` clean (66 pkgs), `npm run typecheck` pass, `vite build` pass (159 kB gzipped 51.78 kB), dev server boots on :5173, `curl /` `curl /funnel/name` `curl /result` all 200
+- **Learnings for future iterations:**
+  - Manual scaffold > `npm create vite` for harness use — interactive prompts hang the agent. React-only deps are 5 packages, fast to write directly.
+  - `strictPort: true` in vite.config.js makes port collisions fail fast instead of silently shifting to 5174 — important when server CORS allowlist is hardcoded to 5173.
+  - SPA all routes return 200 because Vite dev server serves index.html for unknown paths — does NOT mean the React route component rendered. For real verification of route rendering, browser test required (not yet wired). Future UI stories (US-006+) should use the dev-browser skill if available, else flag manual verification needed.
+  - `package.json` `type: "module"` is required so `vite.config.js` can use ESM import syntax. Don't accidentally drop it.
+  - Client deps separated from server deps by design (two `package.json`s); never co-mingle. Root has no package.json.
 ---
