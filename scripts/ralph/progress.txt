@@ -34,6 +34,7 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Region values stored as Korean 시/도 names (matches future API translation layer flagged in US-003). 17-region list lives inline in `FunnelRegion.jsx` as `REGIONS` const. If region matching needs zipCd codes (server side), translate at POST boundary in US-012, not in the store.
 - `<select>` placeholder pattern: first `<option value="" disabled>` plus store default `''` keeps the select unselected on mount and gates '다음' via `region.length > 0`.
 - Radio group pattern (US-010): `<fieldset>`+`<legend>` wraps `<div role="radiogroup">`. Each option = `<label>` wrapping `<input type="radio" name="job">` so click anywhere on row toggles. Selected option highlighted via border `#2563eb` + bg `#eff6ff`; unselected `#cbd5e1`/white. `accentColor: #2563eb` themes the native radio dot. Don't autoFocus radios (focus-jump confuses keyboard users).
+- Numeric input pattern (US-011): `<input type="text" inputMode="numeric" pattern="[0-9]*">` instead of `type="number"` — avoids browser spinners + locale decimal-comma quirks while still triggering the numeric mobile keypad. Filter at onChange: `if (raw === '' || /^\d+$/.test(raw)) setField(...)` so the store never holds an invalid value (paste of '-1' / '1.5' / 'abc' silently rejected). Validation gate is the same regex on the value, so empty string fails.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -185,4 +186,19 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - `name="job"` on all radios scopes the group so only one is selectable at a time (browser-native behavior; don't fight it with manual state-juggling).
   - Visual selection state via border + background change is a reusable affordance for future selectable lists; consider extracting if US-012 result cards need similar.
   - `accentColor` on input themes the native dot — cheaper than custom-painting checkmarks. Works in evergreen browsers; harmless fallback elsewhere.
+---
+
+## 2026-05-06 - US-011
+- Built funnel step 4 (income input) replacing placeholder
+- Files changed:
+  - client/src/pages/FunnelIncome.jsx - Landing-style shell, ProgressBar(4,4), labeled <input type="text" inputMode="numeric" pattern="[0-9]*"> bound to funnelStore.income via setField. onChange filter accepts only '' or /^\d+$/, so the store never holds a non-integer. canProceed = /^\d+$/.test(income). '이전' → /funnel/job, '추천받기' disabled until valid then → /result.
+  - scripts/ralph/prd.json - US-011 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (54 modules / 174.86 kB / 56.54 kB gzipped). Browser verification deferred — no dev-browser MCP wired.
+- **Learnings for future iterations:**
+  - Bundle delta 1.57 kB (173.29 → 174.86 kB) — confirms ~2 kB per funnel page once shared deps in graph. Funnel pages now total ~12 kB from the post-Landing baseline.
+  - `type="text"` + `inputMode="numeric"` + `pattern="[0-9]*"` is the right primitive for non-negative integer inputs in funnel UX. `type="number"` brings spinners, locale-decimal-comma quirks, and lets users type '-' / 'e' / '.' which would have to be filtered out anyway. Reuse this pattern any time a future field needs digits-only.
+  - Filter-at-write keeps the store invariant clean: rather than storing whatever the user typed and validating later, reject invalid characters at onChange. Means downstream code (US-012 POST /api/recommend body) can safely `Number(income)` without re-validation.
+  - Income remains a string in the store ('' default per US-005). US-012 must convert to Number when posting (`income: Number(income)`) — server matchIncome treats it as raw numeric (만원 unit per acceptance criteria). Don't change the store type; the conversion is the POST boundary's job.
+  - autoFocus on first input of the step is consistent with FunnelName (US-008). Keypads pop up on mobile, saving a tap. Confirmed safe for text-style inputs (not for selects/radios).
+  - `추천받기` (not `다음`) is the submit-style button label per acceptance criteria — last step in funnel goes straight to /result. Other styling stays identical to other '다음' buttons so users see continuity.
 ---

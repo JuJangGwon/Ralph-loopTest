@@ -184,8 +184,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "FunnelIncome.jsx mirrors FunnelName shell (page+card) with ProgressBar current=4/total=4. Single labeled <input type=text inputMode=numeric pattern=[0-9]*> bound to useFunnelStore income via setField('income', raw). onChange filter accepts '' or /^\\d+$/ only — paste/keypress of '-', '.', letters silently ignored, so non-negative-integer constraint enforced at input boundary (store never holds invalid value). canProceed = /^\\d+$/.test(income) so '' fails the gate. autoFocus on input. Two-button row: '이전' (#e5e7eb) → /funnel/job, '추천받기' disabled until valid (style toggles bg/cursor like prior steps), navigates /result. typecheck + vite build pass (54 modules / 174.86 kB / 56.54 kB gzipped). Browser verification deferred — no dev-browser MCP wired."
     },
     {
       "id": "US-012",
