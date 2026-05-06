@@ -33,6 +33,7 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Funnel back/next button row: flex with `gap: 12px`. '이전' button bg `#e5e7eb` text `#0f172a` always enabled. '다음' button reuses US-008 disabled-toggle style. Pattern in `client/src/pages/FunnelRegion.jsx` — reuse for US-010/US-011.
 - Region values stored as Korean 시/도 names (matches future API translation layer flagged in US-003). 17-region list lives inline in `FunnelRegion.jsx` as `REGIONS` const. If region matching needs zipCd codes (server side), translate at POST boundary in US-012, not in the store.
 - `<select>` placeholder pattern: first `<option value="" disabled>` plus store default `''` keeps the select unselected on mount and gates '다음' via `region.length > 0`.
+- Radio group pattern (US-010): `<fieldset>`+`<legend>` wraps `<div role="radiogroup">`. Each option = `<label>` wrapping `<input type="radio" name="job">` so click anywhere on row toggles. Selected option highlighted via border `#2563eb` + bg `#eff6ff`; unselected `#cbd5e1`/white. `accentColor: #2563eb` themes the native radio dot. Don't autoFocus radios (focus-jump confuses keyboard users).
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -170,4 +171,18 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - `<select>` default `''` + first option `value=''` `disabled` is the canonical "placeholder" pattern — keeps store default consistent with empty-string convention. Don't initialize store fields to `null` for selects.
   - Did NOT autoFocus the select — picker UX on mobile would auto-pop the wheel, surprising users. autoFocus reserved for text inputs only (US-008, US-011).
   - Two-button row pattern (이전+다음 in flex row, gap 12px) is now established. US-010/US-011 should reuse identical layout so the funnel feels uniform.
+---
+
+## 2026-05-06 - US-010
+- Built funnel step 3 (job select) replacing placeholder
+- Files changed:
+  - client/src/pages/FunnelJob.jsx - Landing-style shell, ProgressBar(3,4), <fieldset>+<legend>직업, role=radiogroup containing 5 <label>+<input type=radio> rows for 대학생/취업준비생/재직자/창업자/무직 bound to funnelStore.job via setField. Selected row gets blue border #2563eb + bg #eff6ff. accentColor #2563eb on inputs. '이전'→/funnel/region, '다음' disabled until job.length>0 then →/funnel/income.
+  - scripts/ralph/prd.json - US-010 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (54 modules / 173.29 kB / 56.37 kB gzipped). Browser verification deferred — no dev-browser MCP wired.
+- **Learnings for future iterations:**
+  - Bundle delta 1.86 kB (171.43 → 173.29 kB) — confirms ~2 kB per funnel page once shared deps in graph. US-011 should land near 175 kB.
+  - Tap-target: full <label> wraps radio + text so entire 14px-padded row is clickable (better mobile UX than tiny native radio circle alone).
+  - `name="job"` on all radios scopes the group so only one is selectable at a time (browser-native behavior; don't fight it with manual state-juggling).
+  - Visual selection state via border + background change is a reusable affordance for future selectable lists; consider extracting if US-012 result cards need similar.
+  - `accentColor` on input themes the native dot — cheaper than custom-painting checkmarks. Works in evergreen browsers; harmless fallback elsewhere.
 ---

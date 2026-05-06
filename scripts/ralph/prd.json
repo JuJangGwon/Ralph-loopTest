@@ -167,8 +167,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "FunnelJob.jsx mirrors FunnelRegion shell (page+card) with ProgressBar current=3/total=4. JOB_OPTIONS=['대학생','취업준비생','재직자','창업자','무직']. <fieldset>+<legend>직업</legend> wraps role=radiogroup div. Each <label> wraps radio input bound to useFunnelStore job via setField('job', e.target.value); selected option styled with blue border (#2563eb) + light-blue bg (#eff6ff). Two-button row: '이전' (#e5e7eb) → /funnel/region, '다음' disabled until job.length>0 then → /funnel/income. typecheck + vite build pass (54 modules / 173.29 kB / 56.37 kB gzipped). Browser verification deferred — no dev-browser MCP wired."
     },
     {
       "id": "US-011",
