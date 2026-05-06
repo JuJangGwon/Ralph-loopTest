@@ -21,6 +21,8 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Client typecheck: `npm run typecheck` runs `node --check vite.config.js`. Extend script per file when adding TS/JS source files that need static syntax check (parallels server pattern).
 - Client env: `VITE_API_BASE_URL` from `client/.env` (committed) + `client/.env.example`. Vite only exposes vars prefixed `VITE_`.
 - Root `.gitignore` already covers `node_modules/` and `dist/` for both `server/` and `client/` — no client-specific ignore needed.
+- Client state: `client/src/store/funnelStore.js` exports `useFunnelStore` (zustand). Fields `name/region/job/income` default `''`. Mutators: `setField(field, value)` and `reset()`. Funnel pages should call `useFunnelStore((s) => s.field)` for narrow subscriptions and `setField` for writes — never mutate state directly.
+- Client typecheck pattern: append `&& node --check <path>` to the `typecheck` script for every new `.js` source file (parallels server). JSX files skipped — `node --check` cannot parse JSX.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -88,4 +90,19 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - SPA all routes return 200 because Vite dev server serves index.html for unknown paths — does NOT mean the React route component rendered. For real verification of route rendering, browser test required (not yet wired). Future UI stories (US-006+) should use the dev-browser skill if available, else flag manual verification needed.
   - `package.json` `type: "module"` is required so `vite.config.js` can use ESM import syntax. Don't accidentally drop it.
   - Client deps separated from server deps by design (two `package.json`s); never co-mingle. Root has no package.json.
+---
+
+## 2026-05-06 - US-005
+- Added zustand global state store for funnel inputs
+- Files changed:
+  - client/package.json - added zustand@^4.5.7 dep, extended typecheck to `node --check src/store/funnelStore.js`
+  - client/package-lock.json - regenerated (zustand + use-sync-external-store)
+  - client/src/store/funnelStore.js (new) - useFunnelStore exposes { name, region, job, income, setField, reset }; initialState reused by reset
+- Verified: typecheck pass, smoke test via `node -e "import('./src/store/funnelStore.js')..."` confirms initial state empty, setField updates target field, reset restores all four fields to ''
+- **Learnings for future iterations:**
+  - zustand v4 uses named export `create` from `'zustand'` (not default). v5 changes signature - stay on v4 unless reason to upgrade.
+  - Hook pattern: `const name = useFunnelStore((s) => s.name)` for narrow subscriptions in funnel pages (avoids re-render storms when unrelated fields change). `useFunnelStore((s) => s.setField)` is stable ref - safe to use in deps.
+  - For tests/non-React code, use `useFunnelStore.getState()` and `useFunnelStore.setState()` (or call action via `getState().setField(...)`) - same store instance.
+  - `node --check` cannot parse JSX, so skip `.jsx` files in typecheck. Plain `.js` modules in `src/` are fine to add to the chain.
+  - reset spreads fresh `initialState` every time so mutating any field cannot leak into the constant - pattern is intentional, don't shortcut to a frozen reference unless you also freeze.
 ---

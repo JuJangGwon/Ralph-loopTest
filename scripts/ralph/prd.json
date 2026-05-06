@@ -88,8 +88,8 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "zustand@4.5 added to client deps. client/src/store/funnelStore.js exposes useFunnelStore (create) with name/region/job/income (init ''), setField(field,value) updates named field via spread, reset() restores initial. typecheck extended (node --check src/store/funnelStore.js). Smoke test via dynamic import: setField+reset cycle returns expected state."
     },
     {
       "id": "US-006",
