@@ -13,6 +13,9 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Normalized benefit shape: `{ id, name, region, jobCondition, incomeCondition: { earnMinAmt, earnMaxAmt, earnCndSeCd, raw }, summary, applyUrl }` — region uses `zipCd` from API (numeric region code). Future scoring/UI must compare regions in the same code space, NOT raw Korean names.
 - 온통청년 API: JSON endpoint `https://www.youthcenter.go.kr/go/ythip/getPlcy`, params `apiKeyNm/pageNum/pageSize/rtnType=json`, response `result.youthPolicyList` + `result.pagging.totCount`. Override via `YOUTH_API_URL` env if needed.
 - When `YOUTH_API_KEY` empty, `loadBenefits()` short-circuits to `[]` with a warning — server still boots cleanly. Use this for offline dev.
+- Test runner: `node --test <file>` (built-in, no deps). Pass an explicit file path — `node --test __tests__` resolves the directory as a CJS module on Windows and crashes (MODULE_NOT_FOUND). Run via `npm test` from `server/`.
+- Scoring: `server/score.js` exposes pure `scoreBenefit(benefit, input)` and `recommend(benefits, input)`. Region-match treats `''/null/'전국'/'00000'/'003001'` as nationwide (+1); exact string equality is +3. Job match splits benefit.jobCondition on `,/|`, then substring fallback. Income +2 when min/max both null OR user income within [min,max]. Recommend filters score<1, sorts score desc, name asc tiebreak.
+- POST /api/recommend handler in `index.js` 400s with `{ error: 'missing required fields: ...' }` when any of name/region/job/income absent (income==='' counts as missing). Otherwise returns `{ recommendations }`.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -44,4 +47,20 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - Pagination uses `result.pagging.totCount` (note the typo "pagging" — that's the actual API field, not a bug)
   - For US-003 test isolation: import `_setBenefitsForTest` to seed the cache before scoring tests, no need to mock axios
   - Region matching (US-003) must reconcile API `zipCd` (numeric) vs UI 17 시/도 names (US-009) — likely need a code→name map; flag this when implementing US-003
+---
+
+## 2026-05-06 - US-003
+- Implemented POST /api/recommend with pure scoring lib + node:test unit suite
+- Files changed:
+  - server/score.js (new) - isNationwide/matchRegion/matchJob/matchIncome/scoreBenefit/recommend
+  - server/index.js - add `/api/recommend` POST handler with field validation (400 on missing) calling `recommend(getBenefits(), input)`
+  - server/__tests__/score.test.js (new) - 15 tests covering nationwide tokens, region/job/income matchers, score aggregation, sort+filter+tiebreak, response shape
+  - server/package.json - typecheck extended to score.js + test file; `test` script: `node --test __tests__/score.test.js`
+- Verified: typecheck pass, npm test 15/15 pass, smoke test via in-proc fetch returned 200 with sorted recommendations and 400 on missing fields
+- **Learnings for future iterations:**
+  - `node --test <dir>` is broken on Windows Node 22 — pass file path or glob, NOT a directory. Future test files must be added to the `test` script explicitly (or switch to a glob pattern).
+  - Region matching gap remains for US-009/US-012: API benefit.region is `zipCd` (numeric) but UI will send Korean 시/도 names. Either (a) translate UI names to zipCd before POST, or (b) extend `matchRegion` to accept either form via a map. Decide before US-009.
+  - Income comparison treats min/max as same unit as user input (만원 per US-011 label). API `earnMinAmt/earnMaxAmt` units must be confirmed against real responses; current logic assumes raw numeric equality of units.
+  - For future endpoints needing benefits cache in tests: import `_setBenefitsForTest` from `./benefits` and seed before requests — works without HTTP listening (use `app.listen(0)` for ephemeral port).
+  - Validation pattern: collect missing field names in array, 400 with `{ error: 'missing required fields: a, b' }`. Reuse for future POST endpoints to keep error shape consistent.
 ---

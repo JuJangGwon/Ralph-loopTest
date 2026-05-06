@@ -55,8 +55,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "score.js exposes scoreBenefit/recommend (region +3 exact / +1 nationwide, job +2, income +2 if within [earnMinAmt,earnMaxAmt] or no constraint). POST /api/recommend in index.js validates name/region/job/income, 400 with missing list else 200 { recommendations: [{id,name,region,summary,applyUrl,score}] } sorted by score desc, name asc tiebreak. node:test suite at server/__tests__/score.test.js (15 tests, all pass). npm test wired."
     },
     {
       "id": "US-004",

@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "typecheck": "node --check index.js && node --check benefits.js"
+    "typecheck": "node --check index.js && node --check benefits.js && node --check score.js && node --check __tests__/score.test.js",
+    "test": "node --test __tests__/score.test.js"
   },
   "dependencies": {
     "axios": "^1.7.7",
