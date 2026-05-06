@@ -30,6 +30,9 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Funnel page shell: reuse Landing pattern — `<main style={pageStyle}><section style={cardStyle}>` with `<ProgressBar current={N} total={4} />` at top, labeled inputs, then primary button. Disabled-button style toggle: `background: canProceed ? '#2563eb' : '#94a3b8'` + `cursor: pointer↔not-allowed` keeps visual affordance consistent across steps.
 - Funnel store binding: `useFunnelStore((s) => s.<field>)` for value, `useFunnelStore((s) => s.setField)` for writes. Drive inputs via `onChange={(e) => setField('<field>', e.target.value)}`. Selectors with narrow slices avoid cross-field re-render.
 - Validation rule used in US-008: `name.trim().length > 0` to gate '다음'. Future steps should pick analogous trimmed/non-empty checks consistent with this approach.
+- Funnel back/next button row: flex with `gap: 12px`. '이전' button bg `#e5e7eb` text `#0f172a` always enabled. '다음' button reuses US-008 disabled-toggle style. Pattern in `client/src/pages/FunnelRegion.jsx` — reuse for US-010/US-011.
+- Region values stored as Korean 시/도 names (matches future API translation layer flagged in US-003). 17-region list lives inline in `FunnelRegion.jsx` as `REGIONS` const. If region matching needs zipCd codes (server side), translate at POST boundary in US-012, not in the store.
+- `<select>` placeholder pattern: first `<option value="" disabled>` plus store default `''` keeps the select unselected on mount and gates '다음' via `region.length > 0`.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -153,4 +156,18 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - `name.trim().length > 0` gate avoids whitespace-only inputs being accepted. US-009 (region) won't need trim (select dropdown), US-010 (job) won't either (radio), but US-011 (income) needs `Number.isInteger(n) && n >= 0` per acceptance criteria.
   - Selectors split across two `useFunnelStore` hooks (one for value, one for setField) is intentional — keeps each subscription narrow. setField reference is stable so safe.
   - autoFocus on first funnel input cuts a tap on mobile; consider reusing on FunnelRegion select / FunnelIncome input but NOT on radio groups (focus-jump can confuse keyboard users).
+---
+
+## 2026-05-06 - US-009
+- Built funnel step 2 (region select) replacing placeholder
+- Files changed:
+  - client/src/pages/FunnelRegion.jsx - Landing-style shell, ProgressBar(2,4), labeled <select> bound to funnelStore.region via setField, placeholder option `value=''` disabled, 17 시/도 entries, '이전'→/funnel/name, '다음' disabled until region selected then →/funnel/job
+  - scripts/ralph/prd.json - US-009 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (54 modules / 171.43 kB / 56.05 kB gzipped). Browser verification deferred — no dev-browser MCP wired.
+- **Learnings for future iterations:**
+  - Bundle delta 1.7 kB (169.72 → 171.43 kB) — second funnel page only adds page-specific markup since zustand+ProgressBar already in graph. Confirms US-008 prediction. Expect similar deltas for US-010/US-011.
+  - 17 시/도 list inline in FunnelRegion.jsx. If a zipCd↔name map becomes necessary for US-012 server scoring, factor list into `client/src/data/regions.js` with `{ name, zipCd }` shape — single source for both UI and POST translation.
+  - `<select>` default `''` + first option `value=''` `disabled` is the canonical "placeholder" pattern — keeps store default consistent with empty-string convention. Don't initialize store fields to `null` for selects.
+  - Did NOT autoFocus the select — picker UX on mobile would auto-pop the wheel, surprising users. autoFocus reserved for text inputs only (US-008, US-011).
+  - Two-button row pattern (이전+다음 in flex row, gap 12px) is now established. US-010/US-011 should reuse identical layout so the funnel feels uniform.
 ---

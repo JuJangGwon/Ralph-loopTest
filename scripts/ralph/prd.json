@@ -151,8 +151,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "FunnelRegion.jsx mirrors FunnelName shell (page+card) with ProgressBar current=2/total=4. REGIONS const lists 17 시/도 (서울특별시…제주특별자치도). <select> bound to useFunnelStore region via setField('region', e.target.value). Placeholder option value='' disabled (forces explicit pick). Two-button row: '이전' (#e5e7eb) navigates /funnel/name, '다음' disabled until region.length>0 (style toggles bg/cursor like US-008), navigates /funnel/job. typecheck + vite build pass (54 modules / 171.43 kB / 56.05 kB gzipped). Browser verification deferred — no dev-browser MCP wired."
     },
     {
       "id": "US-010",
