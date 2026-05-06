@@ -25,6 +25,8 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Client typecheck pattern: append `&& node --check <path>` to the `typecheck` script for every new `.js` source file (parallels server). JSX files skipped — `node --check` cannot parse JSX.
 - Client UI components: live in `client/src/components/*.jsx`. Inline styles only (no Tailwind/CSS modules wired yet). Funnel steps map: `['이름','거주 지역','직업','연소득']` (1-indexed) — keep this order in sync if a step is added/removed.
 - `vite build` is the practical safety net for JSX syntax — typecheck script doesn't cover `.jsx`. Run `npm run build` after touching components even when typecheck passes.
+- Mobile-first sizing: use `clamp(min, vw, max)` for fluid font sizes and `maxWidth: 480px` + `width: 100%` + `boxSizing: border-box` on cards. Pattern in `client/src/pages/Landing.jsx`. Reuse for funnel pages so layout stays consistent across breakpoints without media queries.
+- Page navigation: import `useNavigate` from `react-router-dom`, then `const navigate = useNavigate()`; call `navigate('/path')` in handlers. Don't use `<a href>` for in-app links (full reload).
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -121,4 +123,17 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - `node --check` skips `.jsx` so `npm run build` is the only pre-commit safety net for JSX syntax errors. Add `npm run build` to the per-iteration QA chain whenever a `.jsx` file changes.
   - Inline styles chosen because no css framework wired yet. If/when a styling solution is added (CSS modules / Tailwind / styled-components), this component is first refactor candidate — keep self-contained until then.
   - Component exports default function; consumers import as `import ProgressBar from '../components/ProgressBar.jsx'` from `pages/`. Verify relative path when wiring in US-008+.
+---
+
+## 2026-05-06 - US-007
+- Built landing page replacing placeholder
+- Files changed:
+  - client/src/pages/Landing.jsx - <main>+<section> card, h1 title, p description, '시작하기' button calling navigate('/funnel/name')
+  - scripts/ralph/prd.json - US-007 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (39 modules, 163.29 kB / 53.47 kB gzipped). Browser verification deferred — no dev-browser MCP available; recommend manual visual check on :5173 once dev server running.
+- **Learnings for future iterations:**
+  - Use `useNavigate()` from `react-router-dom` for in-app navigation in funnel buttons (US-008..US-011) — consistent with Landing pattern. Don't fall back to `<a>` (causes reload).
+  - Mobile-first without media queries: combine `clamp(min, vw, max)` font sizes + `maxWidth: 480px` card + `width: 100%` button + `boxSizing: border-box`. Card auto-fits phones up to 480px, fluid scales beyond. Reuse for FunnelName/Region/Job/Income/Result.
+  - Inline-style page boilerplate: `<main style={pageStyle}><section style={cardStyle}>...</section></main>` with `pageStyle.minHeight=100vh` + flex center. Funnel pages should follow the same shell so navigation feels uniform.
+  - Bundle grew ~4 kB (159 → 163 kB) from inline styles + Landing markup; expected. Watch chunk size when funnel pages add similar boilerplate — consider extracting shared shell only if duplication becomes painful (US-012 is good time to evaluate).
 ---

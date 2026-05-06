@@ -119,8 +119,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Landing.jsx renders centered card on #f9fafb backdrop: <h1> '청년 혜택 추천', <p> 1-line description, full-width '시작하기' button. useNavigate('/funnel/name') on click. Mobile-first via clamp() font sizing + maxWidth:480 card + 100% button width + box-sizing:border-box. Inline styles only (matches ProgressBar pattern). vite build pass (163 kB / 53.47 kB gzipped). Browser verification deferred — no dev-browser MCP wired."
     },
     {
       "id": "US-008",
