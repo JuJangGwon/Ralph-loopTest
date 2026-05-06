@@ -204,8 +204,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Result.jsx posts to ${VITE_API_BASE_URL}/api/recommend on mount via useEffect+useCallback (income coerced via Number()), tracks status loading|done|error. Loading: animated CSS spinner via injected <style> @keyframes rb-spin (no extra dep). Done+empty: '조건에 맞는 혜택을 찾지 못했어요'. Done+items: <ul> of cards (name h2 + score badge dbeafe/1d4ed8 pill + summary p + '신청하러 가기' anchor target=_blank rel=noopener noreferrer using applyUrl). Error: red callout box + '다시 시도' button calling fetchRecommendations again. '처음으로' button always at bottom — calls funnelStore.reset() + navigate('/'). Server already sorts score desc (US-003), render preserves order. typecheck + vite build pass (54 modules / 178.75 kB / 57.70 kB gzipped). Browser verification deferred — no dev-browser MCP wired."
     }
   ]
 }

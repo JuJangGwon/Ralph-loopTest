@@ -35,6 +35,9 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - `<select>` placeholder pattern: first `<option value="" disabled>` plus store default `''` keeps the select unselected on mount and gates '다음' via `region.length > 0`.
 - Radio group pattern (US-010): `<fieldset>`+`<legend>` wraps `<div role="radiogroup">`. Each option = `<label>` wrapping `<input type="radio" name="job">` so click anywhere on row toggles. Selected option highlighted via border `#2563eb` + bg `#eff6ff`; unselected `#cbd5e1`/white. `accentColor: #2563eb` themes the native radio dot. Don't autoFocus radios (focus-jump confuses keyboard users).
 - Numeric input pattern (US-011): `<input type="text" inputMode="numeric" pattern="[0-9]*">` instead of `type="number"` — avoids browser spinners + locale decimal-comma quirks while still triggering the numeric mobile keypad. Filter at onChange: `if (raw === '' || /^\d+$/.test(raw)) setField(...)` so the store never holds an invalid value (paste of '-1' / '1.5' / 'abc' silently rejected). Validation gate is the same regex on the value, so empty string fails.
+- Client API calls: use `fetch` (no axios in client deps — keep it that way unless a real need shows up). Read base URL from `import.meta.env.VITE_API_BASE_URL` with a fallback to `'http://localhost:3001'`. Income posted as `Number(income)` at the POST boundary (store keeps it as string per US-005). Pattern in `client/src/pages/Result.jsx`.
+- External-link buttons: render as `<a href={url} target="_blank" rel="noopener noreferrer">` styled like a button (don't open in new tab via JS). Required for any `applyUrl`-style links to keep the funnel state intact in the original tab.
+- CSS animations without a build pipeline: inject a one-line `<style>{`@keyframes name { ... }`}</style>` inside the component and reference `animation: 'name 0.8s linear infinite'` in inline styles. Cheaper than adding a CSS file/module for one spinner. Pattern in Result.jsx (`rb-spin`).
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -201,4 +204,21 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - Income remains a string in the store ('' default per US-005). US-012 must convert to Number when posting (`income: Number(income)`) — server matchIncome treats it as raw numeric (만원 unit per acceptance criteria). Don't change the store type; the conversion is the POST boundary's job.
   - autoFocus on first input of the step is consistent with FunnelName (US-008). Keypads pop up on mobile, saving a tap. Confirmed safe for text-style inputs (not for selects/radios).
   - `추천받기` (not `다음`) is the submit-style button label per acceptance criteria — last step in funnel goes straight to /result. Other styling stays identical to other '다음' buttons so users see continuity.
+---
+
+## 2026-05-06 - US-012
+- Built result page with recommendation cards (replaces placeholder Result.jsx)
+- Files changed:
+  - client/src/pages/Result.jsx - useEffect+useCallback fetch POST `${VITE_API_BASE_URL}/api/recommend` on mount with `{name,region,job,income:Number(income)}`. status loading|done|error. Loading: CSS spinner (injected `@keyframes rb-spin`). Done+empty: '조건에 맞는 혜택을 찾지 못했어요'. Done+items: <ul> of cards (h2 name, score pill badge, summary, '신청하러 가기' anchor target=_blank rel=noopener noreferrer). Error: red callout + '다시 시도' button re-runs fetch. '처음으로' button always at bottom calls reset()+navigate('/').
+  - scripts/ralph/prd.json - US-012 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (54 modules / 178.75 kB / 57.70 kB gzipped). Browser verification deferred — no dev-browser MCP wired; manual check needed: server up on :3001 with benefits cache populated, then drive funnel and confirm spinner→cards / empty / error+retry / 처음으로 reset.
+- **Learnings for future iterations:**
+  - Bundle delta 3.89 kB (174.86 → 178.75 kB) — Result.jsx adds the largest single page increment, mostly from the multi-state render branches and inline-styled card list. Acceptable.
+  - `import.meta.env.VITE_API_BASE_URL` is `undefined` if the var isn't prefixed `VITE_` or `client/.env` is missing. Fallback `'http://localhost:3001'` keeps dev safe — don't strip it without replacing with a build-time check.
+  - useCallback wraps the fetch so `useEffect` deps stay stable AND `다시 시도` calls the same memoized fn — single source of truth for the request shape.
+  - `noopener noreferrer` on every `target=_blank` link — security default (no `window.opener` leak). Don't drop it for short-form `target=_blank`.
+  - Server already sorts score-desc + tiebreak by name (US-003) — client renders array order as-is. If server sort changes, client must NOT re-sort on top (would mask bugs).
+  - Score badge derives directly from `item.score` returned by server. If future scoring caps or normalizes to 0-100, the pill copy `${score}점` still works numerically, but consider adding a tooltip/legend on the result page if score interpretation gets fuzzy.
+  - `처음으로` calls `reset()` BEFORE `navigate('/')`. Order matters: reset triggers a store update, but Landing doesn't subscribe so no extra render. If a future Landing reads store fields, the order still leaves it correct.
+  - Empty-recommendations message rendered as a `<p>`, not a card — keeps the visual weight low so users notice the '처음으로' fallback.
 ---
