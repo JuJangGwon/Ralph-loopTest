@@ -104,8 +104,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "client/src/components/ProgressBar.jsx renders horizontal track with width=current/total fill, plus a step-dot row (completed=green ✓, active=blue ringed, pending=gray). Label '<n>/<total> <stepName>' from STEP_LABELS=['이름','거주 지역','직업','연소득']. Inline styles only (no css framework yet). aria-progressbar with valuemin=1/valuemax=total. Inputs clamped (current ≤ total, ≥ 1). vite build pass; typecheck unchanged (JSX skipped per pattern). Browser verification deferred — no dev-browser MCP wired in this harness."
     },
     {
       "id": "US-007",

@@ -23,6 +23,8 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - Root `.gitignore` already covers `node_modules/` and `dist/` for both `server/` and `client/` — no client-specific ignore needed.
 - Client state: `client/src/store/funnelStore.js` exports `useFunnelStore` (zustand). Fields `name/region/job/income` default `''`. Mutators: `setField(field, value)` and `reset()`. Funnel pages should call `useFunnelStore((s) => s.field)` for narrow subscriptions and `setField` for writes — never mutate state directly.
 - Client typecheck pattern: append `&& node --check <path>` to the `typecheck` script for every new `.js` source file (parallels server). JSX files skipped — `node --check` cannot parse JSX.
+- Client UI components: live in `client/src/components/*.jsx`. Inline styles only (no Tailwind/CSS modules wired yet). Funnel steps map: `['이름','거주 지역','직업','연소득']` (1-indexed) — keep this order in sync if a step is added/removed.
+- `vite build` is the practical safety net for JSX syntax — typecheck script doesn't cover `.jsx`. Run `npm run build` after touching components even when typecheck passes.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -105,4 +107,18 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - For tests/non-React code, use `useFunnelStore.getState()` and `useFunnelStore.setState()` (or call action via `getState().setField(...)`) - same store instance.
   - `node --check` cannot parse JSX, so skip `.jsx` files in typecheck. Plain `.js` modules in `src/` are fine to add to the chain.
   - reset spreads fresh `initialState` every time so mutating any field cannot leak into the constant - pattern is intentional, don't shortcut to a frozen reference unless you also freeze.
+---
+
+## 2026-05-06 - US-006
+- Added ProgressBar component for funnel steps
+- Files changed:
+  - client/src/components/ProgressBar.jsx (new) - props { current, total }; horizontal aria-progressbar track filled current/total, step-dot row (completed=green check, active=blue ring, pending=gray), label "<n>/<total> <stepName>" from STEP_LABELS
+  - scripts/ralph/prd.json - US-006 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (39 modules transformed, 159 kB / gzipped 51.78 kB). Browser verification deferred — no dev-browser MCP wired; recommend manual visual check once funnel pages consume ProgressBar (US-008+).
+- **Learnings for future iterations:**
+  - Inputs clamp defensively: safeCurrent = clamp(1,total), safeTotal = max(1,total). Defends against 0/NaN when devs navigate to a funnel route directly.
+  - Step labels live in `STEP_LABELS` inside ProgressBar.jsx. If a funnel step changes, update this array AND the route table in `client/src/App.jsx` together.
+  - `node --check` skips `.jsx` so `npm run build` is the only pre-commit safety net for JSX syntax errors. Add `npm run build` to the per-iteration QA chain whenever a `.jsx` file changes.
+  - Inline styles chosen because no css framework wired yet. If/when a styling solution is added (CSS modules / Tailwind / styled-components), this component is first refactor candidate — keep self-contained until then.
+  - Component exports default function; consumers import as `import ProgressBar from '../components/ProgressBar.jsx'` from `pages/`. Verify relative path when wiring in US-008+.
 ---
