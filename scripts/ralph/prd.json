@@ -1,0 +1,211 @@
+{
+  "project": "Youth Benefit Recommender",
+  "branchName": "ralph/youth-benefit-recommender",
+  "description": "Node.js + React web service that recommends Korean youth government benefits based on user inputs (name, region, job, income) collected via funnel UI. Server fetches benefits from Ontongchungnyeon (온통청년) API once at boot and stores them in memory. No database.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Initialize Express server with .env support",
+      "description": "As a developer, I need an Express server scaffold with environment variable loading so subsequent backend work has a foundation.",
+      "acceptanceCriteria": [
+        "Create server/ directory with package.json (express, dotenv, cors, axios)",
+        "server/index.js initializes Express app and listens on PORT from .env (default 3001)",
+        "Create .env.example at project root with YOUTH_API_KEY= and PORT=3001",
+        "Add .env and node_modules to .gitignore",
+        "CORS middleware allows http://localhost:5173",
+        "GET /health returns 200 with { status: 'ok' }",
+        "npm start launches server without errors",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Fetch youth benefits from API and cache in memory at boot",
+      "description": "As a developer, I need to fetch the full youth benefits list from Ontongchungnyeon API on server startup and store it as a module-level constant so requests do not call the external API.",
+      "acceptanceCriteria": [
+        "Create server/benefits.js that exports a loadBenefits() async function and a getBenefits() accessor",
+        "loadBenefits() calls Ontongchungnyeon API using YOUTH_API_KEY from process.env, paginates through all results",
+        "Normalize each benefit to { id, name, region, jobCondition, incomeCondition, summary, applyUrl }",
+        "Store normalized array in module-scoped constant; getBenefits() returns it",
+        "On API failure, log error and fallback to empty array (server boot still succeeds)",
+        "server/index.js calls loadBenefits() before app.listen()",
+        "GET /api/benefits/count returns { count: <number> } for verification",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implement POST /api/recommend with scoring algorithm",
+      "description": "As a developer, I need a recommendation endpoint that scores cached benefits against user inputs and returns matched benefits sorted by score.",
+      "acceptanceCriteria": [
+        "POST /api/recommend accepts JSON body { name, region, job, income }",
+        "Validate all four fields present; return 400 with { error } if missing",
+        "Score each benefit: region exact match +3, nationwide region +1, job match +2, income condition satisfied +2",
+        "Filter out benefits with score < 1",
+        "Sort descending by score, ties broken by name ascending",
+        "Response: { recommendations: [{ id, name, region, summary, applyUrl, score }] }",
+        "Add unit tests for scoring function in server/__tests__/score.test.js",
+        "Tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Initialize React + Vite client with router",
+      "description": "As a developer, I need a React app scaffold with routing configured for the funnel flow.",
+      "acceptanceCriteria": [
+        "Create client/ directory with Vite + React template",
+        "Install react-router-dom",
+        "Define routes: /, /funnel/name, /funnel/region, /funnel/job, /funnel/income, /result",
+        "Each route renders a placeholder component showing its path",
+        "Create client/.env with VITE_API_BASE_URL=http://localhost:3001",
+        "npm run dev starts on port 5173 without errors",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add global state store for funnel inputs",
+      "description": "As a developer, I need a shared state store so funnel inputs persist across step navigation without a database.",
+      "acceptanceCriteria": [
+        "Install zustand in client/",
+        "Create client/src/store/funnelStore.js exposing { name, region, job, income, setField, reset }",
+        "setField(field, value) updates the named field",
+        "reset() clears all fields to empty string",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create ProgressBar component",
+      "description": "As a user, I want to see which funnel step I am on so I know how much remains.",
+      "acceptanceCriteria": [
+        "Create client/src/components/ProgressBar.jsx accepting props { current, total }",
+        "Renders a horizontal bar filled to current/total ratio",
+        "Shows text label like '2/4 거주 지역' next to the bar",
+        "Active step highlighted, completed steps marked",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Build landing page",
+      "description": "As a user, I want a landing page that introduces the service and lets me start the funnel.",
+      "acceptanceCriteria": [
+        "/ route renders title, 1-2 line description, and '시작하기' button",
+        "Clicking the button navigates to /funnel/name",
+        "Mobile-first responsive layout",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Build funnel step 1: name input",
+      "description": "As a user, I want to enter my name on the first funnel step.",
+      "acceptanceCriteria": [
+        "/funnel/name renders ProgressBar (1/4) and a labeled text input for 이름",
+        "Input is bound to funnelStore.name via setField",
+        "'다음' button disabled until name is non-empty",
+        "Clicking '다음' navigates to /funnel/region",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Build funnel step 2: region select",
+      "description": "As a user, I want to choose my region of residence.",
+      "acceptanceCriteria": [
+        "/funnel/region renders ProgressBar (2/4) and a dropdown of 17 시/도",
+        "Selection is bound to funnelStore.region via setField",
+        "'이전' button navigates to /funnel/name",
+        "'다음' button disabled until region selected, then navigates to /funnel/job",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Build funnel step 3: job select",
+      "description": "As a user, I want to select my employment status.",
+      "acceptanceCriteria": [
+        "/funnel/job renders ProgressBar (3/4) and radio options: 대학생, 취업준비생, 재직자, 창업자, 무직",
+        "Selection bound to funnelStore.job via setField",
+        "'이전' navigates to /funnel/region",
+        "'다음' disabled until selection made, then navigates to /funnel/income",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Build funnel step 4: income input",
+      "description": "As a user, I want to enter my annual income.",
+      "acceptanceCriteria": [
+        "/funnel/income renders ProgressBar (4/4) and numeric input labeled '연소득 (만원)'",
+        "Only non-negative integers accepted",
+        "Bound to funnelStore.income via setField",
+        "'이전' navigates to /funnel/job",
+        "'추천받기' button disabled until valid income entered, then navigates to /result",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Build result page with recommendation cards",
+      "description": "As a user, I want to see my matched benefits as cards with apply links.",
+      "acceptanceCriteria": [
+        "/result calls POST {VITE_API_BASE_URL}/api/recommend with funnelStore values on mount",
+        "Show loading spinner while request pending",
+        "Render each result as a Card showing name, summary, score badge",
+        "Each card has '신청하러 가기' button opening applyUrl in new tab (target=_blank rel=noopener noreferrer)",
+        "Cards sorted by score descending (server already sorts; render order preserved)",
+        "If recommendations array empty, show '조건에 맞는 혜택을 찾지 못했어요'",
+        "On API error, show error message and a '다시 시도' button",
+        "Show '처음으로' button that calls funnelStore.reset() and navigates to /",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
