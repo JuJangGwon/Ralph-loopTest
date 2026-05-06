@@ -135,8 +135,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "FunnelName.jsx renders Landing-style shell (page+card) with ProgressBar current=1/total=4 at top. Labeled <label>이름</label> wraps text input bound to useFunnelStore name via setField('name', e.target.value). autoFocus on input. '다음' button disabled when name.trim() empty (style toggles bg #2563eb↔#94a3b8, cursor pointer↔not-allowed). On click navigate('/funnel/region'). vite build pass (54 modules / 169.72 kB / 55.65 kB gzipped). Browser verification deferred — no dev-browser MCP wired."
     },
     {
       "id": "US-009",

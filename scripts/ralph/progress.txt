@@ -27,6 +27,9 @@ Started: Wed, May  6, 2026  4:04:37 PM
 - `vite build` is the practical safety net for JSX syntax — typecheck script doesn't cover `.jsx`. Run `npm run build` after touching components even when typecheck passes.
 - Mobile-first sizing: use `clamp(min, vw, max)` for fluid font sizes and `maxWidth: 480px` + `width: 100%` + `boxSizing: border-box` on cards. Pattern in `client/src/pages/Landing.jsx`. Reuse for funnel pages so layout stays consistent across breakpoints without media queries.
 - Page navigation: import `useNavigate` from `react-router-dom`, then `const navigate = useNavigate()`; call `navigate('/path')` in handlers. Don't use `<a href>` for in-app links (full reload).
+- Funnel page shell: reuse Landing pattern — `<main style={pageStyle}><section style={cardStyle}>` with `<ProgressBar current={N} total={4} />` at top, labeled inputs, then primary button. Disabled-button style toggle: `background: canProceed ? '#2563eb' : '#94a3b8'` + `cursor: pointer↔not-allowed` keeps visual affordance consistent across steps.
+- Funnel store binding: `useFunnelStore((s) => s.<field>)` for value, `useFunnelStore((s) => s.setField)` for writes. Drive inputs via `onChange={(e) => setField('<field>', e.target.value)}`. Selectors with narrow slices avoid cross-field re-render.
+- Validation rule used in US-008: `name.trim().length > 0` to gate '다음'. Future steps should pick analogous trimmed/non-empty checks consistent with this approach.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -136,4 +139,18 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - Mobile-first without media queries: combine `clamp(min, vw, max)` font sizes + `maxWidth: 480px` card + `width: 100%` button + `boxSizing: border-box`. Card auto-fits phones up to 480px, fluid scales beyond. Reuse for FunnelName/Region/Job/Income/Result.
   - Inline-style page boilerplate: `<main style={pageStyle}><section style={cardStyle}>...</section></main>` with `pageStyle.minHeight=100vh` + flex center. Funnel pages should follow the same shell so navigation feels uniform.
   - Bundle grew ~4 kB (159 → 163 kB) from inline styles + Landing markup; expected. Watch chunk size when funnel pages add similar boilerplate — consider extracting shared shell only if duplication becomes painful (US-012 is good time to evaluate).
+---
+
+## 2026-05-06 - US-008
+- Built funnel step 1 (name input) replacing placeholder
+- Files changed:
+  - client/src/pages/FunnelName.jsx - Landing-style shell, ProgressBar(1,4), labeled text input bound to funnelStore.name via setField, '다음' button disabled when trimmed name empty, navigates to /funnel/region
+  - scripts/ralph/prd.json - US-008 passes:true with notes
+- Verified: `npm run typecheck` pass, `npm run build` pass (54 modules / 169.72 kB / 55.65 kB gzipped). Browser verification deferred — no dev-browser MCP wired.
+- **Learnings for future iterations:**
+  - Bundle jumped 6 kB (163 → 169 kB) once first funnel page imports zustand selector + ProgressBar — first-time-cost. Subsequent funnel pages (US-009..US-011) should add only marginal kB since deps already in graph.
+  - Disabled-button visual: bg #94a3b8 + cursor not-allowed. Keep across funnel steps so users can see progress is gated.
+  - `name.trim().length > 0` gate avoids whitespace-only inputs being accepted. US-009 (region) won't need trim (select dropdown), US-010 (job) won't either (radio), but US-011 (income) needs `Number.isInteger(n) && n >= 0` per acceptance criteria.
+  - Selectors split across two `useFunnelStore` hooks (one for value, one for setField) is intentional — keeps each subscription narrow. setField reference is stable so safe.
+  - autoFocus on first funnel input cuts a tap on mobile; consider reusing on FunnelRegion select / FunnelIncome input but NOT on radio groups (focus-jump can confuse keyboard users).
 ---
