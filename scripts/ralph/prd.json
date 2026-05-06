@@ -36,8 +36,8 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "benefits.js loadBenefits() paginates via apiKeyNm/pageNum/pageSize/rtnType=json against YOUTH_API_URL (default youthcenter.go.kr/go/ythip/getPlcy), normalizes plcyNo/plcyNm/zipCd/jobCd/earnMin|MaxAmt/plcyExplnCn/aplyUrlAddr. Module-scoped BENEFITS, fallback []. /api/benefits/count verified -> {count:0} when key absent."
     },
     {
       "id": "US-003",

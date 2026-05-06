@@ -4,11 +4,15 @@ Started: Wed, May  6, 2026  4:04:37 PM
 
 ## Codebase Patterns
 - Server entry: `server/index.js` — CommonJS, dotenv loaded from project-root `.env` via `path.resolve(__dirname, '..', '.env')`
-- Run server: `cd server && npm start` (typecheck via `npm run typecheck` = `node --check`)
+- Run server: `cd server && npm start` (typecheck via `npm run typecheck` = `node --check` over each .js file)
 - CORS origin allowlist: `http://localhost:5173` (Vite client default)
 - `app` exported from `server/index.js`; `app.listen()` only runs when invoked as main module — keeps app importable from tests
 - Two `package.json`s expected: `server/` (CommonJS) and future `client/` (Vite). No root package.json yet.
 - `.env.example` lives at project root, NOT inside server/ (single source of truth for both server and future client config)
+- Benefits cache: `server/benefits.js` exposes `loadBenefits()` (boot-time fetch + pagination) and `getBenefits()` (sync accessor). Module-scoped `BENEFITS` array; fallback `[]` on error. `_setBenefitsForTest(list)` available for unit tests (US-003 will use it).
+- Normalized benefit shape: `{ id, name, region, jobCondition, incomeCondition: { earnMinAmt, earnMaxAmt, earnCndSeCd, raw }, summary, applyUrl }` — region uses `zipCd` from API (numeric region code). Future scoring/UI must compare regions in the same code space, NOT raw Korean names.
+- 온통청년 API: JSON endpoint `https://www.youthcenter.go.kr/go/ythip/getPlcy`, params `apiKeyNm/pageNum/pageSize/rtnType=json`, response `result.youthPolicyList` + `result.pagging.totCount`. Override via `YOUTH_API_URL` env if needed.
+- When `YOUTH_API_KEY` empty, `loadBenefits()` short-circuits to `[]` with a warning — server still boots cleanly. Use this for offline dev.
 
 ## 2026-05-06 - US-001
 - Implemented Express server scaffold with dotenv, cors, axios deps
@@ -24,4 +28,20 @@ Started: Wed, May  6, 2026  4:04:37 PM
   - Use `if (require.main === module)` guard around app.listen so US-002+ can import the app for tests without binding the port
   - axios already installed at US-001 for US-002 reuse — don't reinstall
   - server/__tests__/ (US-003) will need a test runner; not yet added — pick node --test (built-in, no extra dep) when needed
+---
+
+## 2026-05-06 - US-002
+- Implemented boot-time youth benefits loader with in-memory cache
+- Files changed:
+  - server/benefits.js (new) - loadBenefits() paginates Ontongchungnyeon API, normalize() maps API fields to internal shape, getBenefits() returns module-scoped array; fallback [] on error or missing key
+  - server/index.js - import benefits module, add GET /api/benefits/count, await loadBenefits() before app.listen()
+  - server/package.json - extend typecheck to also `node --check benefits.js`
+  - .env.example - add YOUTH_API_URL with default endpoint
+- Verified: typecheck pass, server boots with empty key warning, /health -> 200 {"status":"ok"}, /api/benefits/count -> {"count":0}
+- **Learnings for future iterations:**
+  - axios via `axios.get(url, { params, timeout })` keeps URL construction safe (encoding handled)
+  - Module-scoped `let BENEFITS = []` + named export of loader/accessor is the singleton pattern in use — do NOT export the array directly (binding stales after reassignment)
+  - Pagination uses `result.pagging.totCount` (note the typo "pagging" — that's the actual API field, not a bug)
+  - For US-003 test isolation: import `_setBenefitsForTest` to seed the cache before scoring tests, no need to mock axios
+  - Region matching (US-003) must reconcile API `zipCd` (numeric) vs UI 17 시/도 names (US-009) — likely need a code→name map; flag this when implementing US-003
 ---

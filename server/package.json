@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "typecheck": "node --check index.js"
+    "typecheck": "node --check index.js && node --check benefits.js"
   },
   "dependencies": {
     "axios": "^1.7.7",
